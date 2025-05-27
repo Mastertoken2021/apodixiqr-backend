@@ -14,14 +14,15 @@ module.exports = async (req, res) => {
   
   const { url, debug } = req.query;
   
-  // Debug endpoint to verify deployment
+  // Debug endpoint to verify deployment - CHECK THIS FIRST!
   if (debug === 'version') {
     console.log('🔧 DEBUG VERSION CHECK - Code deployed at:', new Date().toISOString());
     return res.json({
       success: true,
-      version: 'v3.0-detailed-logging',
+      version: 'v4.0-fixed-debug-endpoint',
       timestamp: new Date().toISOString(),
-      message: 'Updated code with detailed logging is active'
+      message: 'Fixed debug endpoint - now checking debug parameter before URL validation',
+      queryParams: req.query
     });
   }
   
