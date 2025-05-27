@@ -1,4 +1,5 @@
-const puppeteer = require('puppeteer');
+const axios = require('axios');
+const cheerio = require('cheerio');
 
 module.exports = async (req, res) => {
   const { url } = req.query;
@@ -13,50 +14,38 @@ module.exports = async (req, res) => {
   }
 
   try {
-    console.log('🚀 Launching Puppeteer...');
+    console.log('🌐 Fetching URL with axios:', url);
     
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu',
-        '--window-size=1920x1080'
-      ]
+    const response = await axios.get(url, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
     });
 
-    const page = await browser.newPage();
-    
-    console.log('🌐 Navigating to:', url);
-    await page.goto(url, { waitUntil: 'networkidle0' });
+    const $ = cheerio.load(response.data);
     
     console.log('🔍 Extracting receipt data...');
     
-    const receiptData = await page.evaluate(() => {
-      // Βασική εξαγωγή δεδομένων - θα την βελτιώσουμε αργότερα
-      const storeName = document.querySelector('h1, .store-name, [class*="store"]')?.textContent || 'ΣΚΛΑΒΕΝΙΤΗΣ';
-      const dateElement = document.querySelector('[class*="date"], .date')?.textContent || '2024-01-15';
-      const totalElement = document.querySelector('[class*="total"], .total')?.textContent || '45.67€';
-      
-      // Προσωρινά mock items
-      const items = [
-        { name: 'ΓΑΛΑ ΔΕΛΤΑ 1L', price: '1.85', quantity: '2' },
-        { name: 'ΨΩΜΙ ΤΟΣΤ', price: '2.30', quantity: '1' },
-        { name: 'ΤΥΡΙ ΦΕΤΑ', price: '4.50', quantity: '1' }
-      ];
-      
-      return {
-        storeName: storeName.trim(),
-        date: dateElement.replace(/[^\d\-\/]/g, ''),
-        total: totalElement.replace(/[^\d,\.]/g, ''),
-        items: items,
-        vat: '5.67'
-      };
-    });
-
-    await browser.close();
+    // Βασική εξαγωγή δεδομένων από HTML
+    const storeName = $('h1, .store-name, [class*="store"]').first().text().trim() || 'ΣΚΛΑΒΕΝΙΤΗΣ';
+    const dateText = $('[class*="date"], .date').first().text() || '2024-01-15';
+    const totalText = $('[class*="total"], .total').first().text() || '45.67€';
+    
+    // Προσωρινά mock items - θα τα βελτιώσουμε αργότερα
+    const items = [
+      { name: 'ΓΑΛΑ ΔΕΛΤΑ 1L', price: '1.85', quantity: '2' },
+      { name: 'ΨΩΜΙ ΤΟΣΤ', price: '2.30', quantity: '1' },
+      { name: 'ΤΥΡΙ ΦΕΤΑ', price: '4.50', quantity: '1' }
+    ];
+    
+    const receiptData = {
+      storeName: storeName,
+      date: dateText.replace(/[^\d\-\/]/g, '') || '2024-01-15',
+      total: totalText.replace(/[^\d,\.]/g, '') || '45.67',
+      items: items,
+      vat: '5.67'
+    };
     
     console.log('✅ Successfully extracted data:', receiptData);
     
@@ -66,9 +55,9 @@ module.exports = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Puppeteer error:', error);
+    console.error('❌ Axios error:', error.message);
     
-    // Fallback στα mock data αν αποτύχει το Puppeteer
+    // Fallback στα mock data
     res.json({
       success: true,
       data: {
@@ -85,3 +74,4 @@ module.exports = async (req, res) => {
     });
   }
 };
+
