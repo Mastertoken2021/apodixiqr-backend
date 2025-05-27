@@ -13,22 +13,33 @@ module.exports = async (req, res) => {
     return;
   }
   
+  console.log('🚀 ==> RAILWAY API ENDPOINT HIT <== 🚀');
   console.log('🌍 Request method:', req.method);
   console.log('📋 All query params:', req.query);
+  console.log('🔍 Debug param specifically:', req.query.debug);
+  console.log('🔗 URL param specifically:', req.query.url);
   
   // Handle debug endpoint FIRST - before URL validation
+  console.log('🔧 Checking for debug endpoint...');
   if (debugHandler.handleDebugEndpoint(req, res)) {
+    console.log('✅ Debug endpoint handled, returning early');
     return;
   }
+  console.log('⏭️ Debug endpoint not triggered, continuing...');
   
   const { url } = req.query;
   
   if (!url) {
     console.log('❌ No URL provided in request');
+    console.log('❌ Available query params:', Object.keys(req.query));
     return res.status(400).json({
       success: false,
       error: 'URL parameter is required',
-      debug: { timestamp: new Date().toISOString() }
+      debug: { 
+        timestamp: new Date().toISOString(),
+        receivedParams: req.query,
+        missingParam: 'url'
+      }
     });
   }
 
@@ -59,4 +70,5 @@ module.exports = async (req, res) => {
     });
   }
 };
+</lov-write>
 
