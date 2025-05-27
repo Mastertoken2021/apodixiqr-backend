@@ -15,52 +15,66 @@ module.exports = async (req, res) => {
   
   console.log('🚀 ==> RAILWAY API ENDPOINT HIT <== 🚀');
   console.log('🌍 Request method:', req.method);
-  console.log('🔗 Request URL:', req.url);
+  console.log('🔗 Full Request URL:', req.url);
+  console.log('📋 Standard req.query:', req.query);
   
-  // Parse query parameters manually from URL for Railway compatibility
+  // Super robust query parameter parsing
   let queryParams = {};
+  
+  // Method 1: Parse from URL manually
   if (req.url && req.url.includes('?')) {
     const urlParts = req.url.split('?');
     const queryString = urlParts[1];
-    const pairs = queryString.split('&');
+    console.log('🔍 Raw query string:', queryString);
     
-    pairs.forEach(pair => {
-      const [key, value] = pair.split('=');
-      if (key && value) {
-        queryParams[decodeURIComponent(key)] = decodeURIComponent(value);
-      }
-    });
-  }
-  
-  // Also try the standard req.query as fallback
-  const finalQuery = { ...req.query, ...queryParams };
-  
-  console.log('📋 Parsed query params:', finalQuery);
-  console.log('🔍 Debug param specifically:', finalQuery.debug);
-  console.log('🔗 URL param specifically:', finalQuery.url);
-  
-  // Handle debug endpoint FIRST - check for debug parameter only
-  if (finalQuery.debug) {
-    console.log('🔧 Debug parameter detected, calling debug handler...');
-    if (debugHandler.handleDebugEndpoint({ query: finalQuery }, res)) {
-      console.log('✅ Debug endpoint handled successfully, returning early');
-      return;
+    if (queryString) {
+      const pairs = queryString.split('&');
+      pairs.forEach(pair => {
+        const [key, value] = pair.split('=');
+        if (key && value !== undefined) {
+          queryParams[decodeURIComponent(key)] = decodeURIComponent(value);
+        }
+      });
     }
   }
   
-  const { url } = finalQuery;
+  console.log('📋 Manually parsed query params:', queryParams);
   
-  if (!url) {
+  // Check for debug parameter immediately
+  const debugParam = queryParams.debug || req.query?.debug;
+  const urlParam = queryParams.url || req.query?.url;
+  
+  console.log('🔧 Debug parameter found:', debugParam);
+  console.log('🔗 URL parameter found:', urlParam);
+  
+  // Handle debug endpoint FIRST - check for debug=version specifically
+  if (debugParam === 'version') {
+    console.log('✅ DEBUG=VERSION DETECTED - Calling debug handler immediately');
+    return res.json({
+      success: true,
+      version: 'v8.0-super-robust-debug',
+      timestamp: new Date().toISOString(),
+      message: 'Debug endpoint working with super robust parsing',
+      debugParam: debugParam,
+      urlParam: urlParam,
+      rawQuery: req.url,
+      parsedQuery: queryParams,
+      standardQuery: req.query,
+      status: 'Debug endpoint is fully functional'
+    });
+  }
+  
+  // If no URL parameter, return error
+  if (!urlParam) {
     console.log('❌ No URL provided in request');
-    console.log('❌ Available query params:', Object.keys(finalQuery));
     return res.status(400).json({
       success: false,
       error: 'URL parameter is required',
       debug: { 
         timestamp: new Date().toISOString(),
-        receivedParams: finalQuery,
+        receivedParams: queryParams,
         originalQuery: req.query,
-        parsedFromUrl: queryParams,
+        debugParam: debugParam,
         missingParam: 'url'
       }
     });
@@ -68,7 +82,7 @@ module.exports = async (req, res) => {
 
   try {
     // Check if it's a test URL
-    if (url === 'test') {
+    if (urlParam === 'test') {
       console.log('🧪 Test URL detected, returning test data');
       const testData = {
         storeName: 'ΣΚΛΑΒΕΝΙΤΗΣ',
@@ -87,12 +101,12 @@ module.exports = async (req, res) => {
       return res.json({
         success: true,
         data: testData,
-        url: url,
+        url: urlParam,
         timestamp: new Date().toISOString()
       });
     }
 
-    const { receiptData, debug } = await receiptScraper.scrapeReceiptData(url);
+    const { receiptData, debug } = await receiptScraper.scrapeReceiptData(urlParam);
     
     res.json({
       success: true,
