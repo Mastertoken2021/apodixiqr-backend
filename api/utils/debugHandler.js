@@ -11,13 +11,14 @@ module.exports = {
       console.log('🔧 DEBUG VERSION CHECK TRIGGERED - Code deployed at:', new Date().toISOString());
       res.json({
         success: true,
-        version: 'v6.0-fixed-query-parsing',
+        version: 'v7.0-debug-endpoint-fixed',
         timestamp: new Date().toISOString(),
-        message: 'Fixed query parameter parsing for Railway',
+        message: 'Debug endpoint now working correctly on Railway',
         queryParams: req.query,
         debugParam: debug,
         allParams: Object.keys(req.query || {}),
-        railwayCompatible: true
+        railwayCompatible: true,
+        status: 'Debug endpoint is functional'
       });
       return true;
     }
