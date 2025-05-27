@@ -12,7 +12,18 @@ module.exports = async (req, res) => {
     return res.status(200).end();
   }
   
-  const { url } = req.query;
+  const { url, debug } = req.query;
+  
+  // Debug endpoint to verify deployment
+  if (debug === 'version') {
+    console.log('🔧 DEBUG VERSION CHECK - Code deployed at:', new Date().toISOString());
+    return res.json({
+      success: true,
+      version: 'v3.0-detailed-logging',
+      timestamp: new Date().toISOString(),
+      message: 'Updated code with detailed logging is active'
+    });
+  }
   
   console.log('🚀 ==> RAILWAY API CALLED <== 🚀');
   console.log('📥 Received request for URL:', url);
