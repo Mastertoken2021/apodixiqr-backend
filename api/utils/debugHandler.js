@@ -1,19 +1,26 @@
+
 module.exports = {
   handleDebugEndpoint: (req, res) => {
+    console.log('🔧 DEBUG HANDLER: Checking debug parameter...');
+    console.log('🔧 DEBUG HANDLER: req.query.debug =', req.query.debug);
+    
     const { debug } = req.query;
     
     if (debug === 'version') {
-      console.log('🔧 DEBUG VERSION CHECK - Code deployed at:', new Date().toISOString());
+      console.log('🔧 DEBUG VERSION CHECK TRIGGERED - Code deployed at:', new Date().toISOString());
       res.json({
         success: true,
-        version: 'v4.0-fixed-debug-endpoint',
+        version: 'v5.0-enhanced-debugging',
         timestamp: new Date().toISOString(),
-        message: 'Fixed debug endpoint - now checking debug parameter before URL validation',
-        queryParams: req.query
+        message: 'Enhanced debugging - checking parameter parsing',
+        queryParams: req.query,
+        debugParam: debug,
+        allParams: Object.keys(req.query)
       });
       return true;
     }
     
+    console.log('🔧 DEBUG HANDLER: No debug=version found, returning false');
     return false;
   }
 };
