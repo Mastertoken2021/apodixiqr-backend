@@ -15,29 +15,51 @@ module.exports = async (req, res) => {
   
   console.log('🚀 ==> RAILWAY API ENDPOINT HIT <== 🚀');
   console.log('🌍 Request method:', req.method);
-  console.log('📋 All query params:', req.query);
-  console.log('🔍 Debug param specifically:', req.query.debug);
-  console.log('🔗 URL param specifically:', req.query.url);
+  console.log('🔗 Request URL:', req.url);
+  
+  // Parse query parameters manually from URL for Railway compatibility
+  let queryParams = {};
+  if (req.url && req.url.includes('?')) {
+    const urlParts = req.url.split('?');
+    const queryString = urlParts[1];
+    const pairs = queryString.split('&');
+    
+    pairs.forEach(pair => {
+      const [key, value] = pair.split('=');
+      if (key && value) {
+        queryParams[decodeURIComponent(key)] = decodeURIComponent(value);
+      }
+    });
+  }
+  
+  // Also try the standard req.query as fallback
+  const finalQuery = { ...req.query, ...queryParams };
+  
+  console.log('📋 Parsed query params:', finalQuery);
+  console.log('🔍 Debug param specifically:', finalQuery.debug);
+  console.log('🔗 URL param specifically:', finalQuery.url);
   
   // Handle debug endpoint FIRST - before URL validation
   console.log('🔧 Checking for debug endpoint...');
-  if (debugHandler.handleDebugEndpoint(req, res)) {
+  if (debugHandler.handleDebugEndpoint({ query: finalQuery }, res)) {
     console.log('✅ Debug endpoint handled, returning early');
     return;
   }
   console.log('⏭️ Debug endpoint not triggered, continuing...');
   
-  const { url } = req.query;
+  const { url } = finalQuery;
   
   if (!url) {
     console.log('❌ No URL provided in request');
-    console.log('❌ Available query params:', Object.keys(req.query));
+    console.log('❌ Available query params:', Object.keys(finalQuery));
     return res.status(400).json({
       success: false,
       error: 'URL parameter is required',
       debug: { 
         timestamp: new Date().toISOString(),
-        receivedParams: req.query,
+        receivedParams: finalQuery,
+        originalQuery: req.query,
+        parsedFromUrl: queryParams,
         missingParam: 'url'
       }
     });
@@ -70,5 +92,3 @@ module.exports = async (req, res) => {
     });
   }
 };
-</lov-write>
-
