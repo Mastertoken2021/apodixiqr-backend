@@ -39,13 +39,14 @@ module.exports = async (req, res) => {
   console.log('🔍 Debug param specifically:', finalQuery.debug);
   console.log('🔗 URL param specifically:', finalQuery.url);
   
-  // Handle debug endpoint FIRST - before URL validation
-  console.log('🔧 Checking for debug endpoint...');
-  if (debugHandler.handleDebugEndpoint({ query: finalQuery }, res)) {
-    console.log('✅ Debug endpoint handled, returning early');
-    return;
+  // Handle debug endpoint FIRST - check for debug parameter only
+  if (finalQuery.debug) {
+    console.log('🔧 Debug parameter detected, calling debug handler...');
+    if (debugHandler.handleDebugEndpoint({ query: finalQuery }, res)) {
+      console.log('✅ Debug endpoint handled successfully, returning early');
+      return;
+    }
   }
-  console.log('⏭️ Debug endpoint not triggered, continuing...');
   
   const { url } = finalQuery;
   
@@ -66,6 +67,31 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // Check if it's a test URL
+    if (url === 'test') {
+      console.log('🧪 Test URL detected, returning test data');
+      const testData = {
+        storeName: 'ΣΚΛΑΒΕΝΙΤΗΣ',
+        date: '2024-01-15',
+        time: '14:30:25',
+        total: '45.67',
+        items: [
+          { name: 'ΓΑΛΑ ΦΡΕΣΚΟ 1L', price: '1.89', quantity: '2' },
+          { name: 'ΨΩΜΙ ΤΟΣΤ', price: '2.45', quantity: '1' },
+          { name: 'ΜΠΑΝΑΝΕΣ ΚΓ', price: '3.20', quantity: '1.5' }
+        ],
+        vat: '5.67',
+        payment_method: 'ΚΑΡΤΑ'
+      };
+      
+      return res.json({
+        success: true,
+        data: testData,
+        url: url,
+        timestamp: new Date().toISOString()
+      });
+    }
+
     const { receiptData, debug } = await receiptScraper.scrapeReceiptData(url);
     
     res.json({
